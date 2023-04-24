@@ -10,7 +10,7 @@
   },
   "description": "truepeoplesearch.com scraper",
   "main": "lib/index.js",
-  "repository": "https://git.pyrosec.gg/project-ghost/truepeoplescrape",
+  "repository": "https://github.com/pyrosec/truepeoplescrape",
   "license": "MIT",
   "private": false,
   "dependencies": {
