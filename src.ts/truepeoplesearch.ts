@@ -5,6 +5,7 @@ import mkdirp from "mkdirp";
 import { Proxy6Client } from "proxy6";
 import { proxyToExport } from "proxy6/lib/cli";
 import { v2ray } from "v2ray-handle";
+import qs from "querystring";
 import url from "url";
 import clone from "clone";
 import v2rayBaseConfig from "./v2ray-base-config.json";
@@ -17,7 +18,8 @@ import cheerio from "cheerio";
 const puppeteer = require("puppeteer-extra");
 const RecaptchaPlugin = require("puppeteer-extra-plugin-recaptcha");
 
-const randomizeArray = (ary) => ary.sort(() => [-1, 1][Math.floor(Math.random()*2)]);
+const randomizeArray = (ary) =>
+  ary.sort(() => [-1, 1][Math.floor(Math.random() * 2)]);
 
 puppeteer.use(
   RecaptchaPlugin({
@@ -31,10 +33,11 @@ puppeteer.use(
 
 const proxy6 = new Proxy6Client({
   apiKey: process.env.PROXY6_API_KEY,
-  proxyOptions: process.env.PROXY6_PROXY && proxyStringToObject(process.env.PROXY6_PROXY)
+  proxyOptions:
+    process.env.PROXY6_PROXY && proxyStringToObject(process.env.PROXY6_PROXY),
 });
 
-function proxyStringToObject (proxyUri: string) {
+function proxyStringToObject(proxyUri: string) {
   const parsed = url.parse(proxyUri);
   const [username, ...passwordParts] = (parsed.auth || "").split(":");
   return {
@@ -74,7 +77,9 @@ export async function cycleIpv4Proxy() {
     state: "active",
     version: 4,
   } as any);
-  const proxies: any = Object.values(response.list).filter((v: any) => v.version === '4' || v.version === '3');
+  const proxies: any = Object.values(response.list).filter(
+    (v: any) => v.version === "4" || v.version === "3"
+  );
   const i = Math.floor(Math.random() * proxies.length) - 1;
   const changeTo = proxies[i + 1] || proxies[0];
   return proxyToExport(changeTo).replace("export all_proxy=", "");
@@ -133,22 +138,21 @@ export const makeV2ray = async (proxy, inboundPort, ipv4Proxy) => {
   config.inbounds[0].settings.port = String(inboundPort);
   config.outbounds[0].settings.servers.push(proxy);
   if (ipv4Proxy) {
-	  console.log(ipv4Proxy);
-    config.outbounds[0].tag = 'ipv6';
+    config.outbounds[0].tag = "ipv6";
     config.outbounds.push(clone(config.outbounds[0]));
     const last = config.outbounds[config.outbounds.length - 1];
     last.settings.servers[0] = ipv4Proxy;
     config.routing.rules.unshift({
-      type: 'field',
-      domain: ['hcaptcha.com', 'ipinfo.io'],
-      outboundTag: 'ipv4'
+      type: "field",
+      domain: ["hcaptcha.com", "ipinfo.io"],
+      outboundTag: "ipv4",
     });
     config.routing.rules.unshift({
-      type: 'field',
-      domain: ['truepeoplesearch.com'],
-      outboundTag: 'ipv6'
+      type: "field",
+      domain: ["truepeoplesearch.com"],
+      outboundTag: "ipv6",
     });
-    last.tag = 'ipv4';
+    last.tag = "ipv4";
   }
   lastConfig = config;
   return await v2ray(config);
@@ -160,6 +164,7 @@ export class TruePuppeteer extends BasePuppeteer {
   public jar: CookieJar;
   public userAgent: string;
   public textContent: string;
+  public row: number;
   static async initialize(o) {
     const result = (await super.initialize(o)) as TruePuppeteer;
     await result._page.setDefaultTimeout(0);
@@ -167,6 +172,86 @@ export class TruePuppeteer extends BasePuppeteer {
     Object.setPrototypeOf(result, TruePuppeteer.prototype);
     result.initializeOpts = o;
     return result;
+  }
+  async tryOrNull(fn) {
+    try {
+      return await fn();
+    } catch (e) {
+      return null;
+    }
+  }
+  static formatAddress(v) {
+    return v.replace(/\n/g, ', ');
+  }
+  static phoneToObject(s) {
+    const [ phone, type ] = s.split(' - ');
+    return {
+      phone,
+      type
+    };
+  }
+  async extractData() {
+    const page = this._page;
+    let row = 6;
+    const content = await page.content();
+    try {
+      return {
+        person: await page.$eval(`div#personDetails > div:nth-child(${this.next()}) span`, (el) => el.innerText),
+        age: await page.$eval(`div#personDetails > div:nth-child(${this.next(true)}) span.content-value`, (el) => el.innerText),
+        currentAddress: content.match('Current Address') ? TruePuppeteer.formatAddress(await page.$eval(`div#personDetails > div:nth-child(${this.next(true)}) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1)`, (el) => el.innerText)) : null,
+        phones: await this.tryOrNull(async () => content.match('Phone Numbers') ? (await page.$$eval(`div#personDetails > div:nth-child(${this.next(true)}) > div:nth-child(2) div.content-value`, (els) => els.map((v) => v.innerText.trim()))).map(TruePuppeteer.phoneToObject) : []),
+        emails: await this.tryOrNull(async () => content.match('mails') ? await page.$$eval(`div#personDetails > div:nth-child(${this.next(true)}) > div:nth-child(2) div.content-value`, (els) => els.map((v) => v.innerText.trim())) : []),
+        names: await this.tryOrNull(async () => content.match('Names') ? await page.$eval(`div#personDetails > div:nth-child(${this.next(true)}) div.content-value`, (el) => el.innerText.trim().split(',').map((v) => v.trim())) : []),
+        addresses: await this.tryOrNull(async () => content.match('Previous Addresses') ? (await page.$$eval(`div#personDetails > div:nth-child(${this.next(true)}) div.content-value`, (els) => els.map((v) => v.innerText.trim()))).map(TruePuppeteer.formatAddress) : []),
+        relatives: await this.tryOrNull(async () => content.match('Relatives') ? await page.$eval(`div#personDetails > div:nth-child(${this.next(true)}) div.content-value`, (el) => el.innerText.trim().split(',').map((v) => v.trim())) : []),
+        associates: await this.tryOrNull(async () => content.match('Associates') ? await page.$eval(`div#personDetails > div:nth-child(${this.next(true)}) div.content-value`, (el) => el.innerText.trim().split(',').map((v) => v.trim())) : [])
+      }
+    } catch (e) {
+      if (process.env.NODE_ENV === 'development') console.error(e);
+      return null;
+    }
+  }
+  next(proceed?) {
+    const fields = [ 1, 4, 6, 10, 13, 15, 18, 20 ];
+    if (!this.row) this.row = 0;
+    const result = fields[this.row];
+    if (proceed) this.row++;
+    return result;
+  }
+  async searchPhone({ phone }) {
+    await this.goto({
+      url: "https://www.truepeoplesearch.com/details?phoneno=" + phone + "&rid=0x0",
+    });
+    return await this._resultWorkflow();
+  }
+  async _resultWorkflow() {
+    return await this.extractData();
+  }
+  async searchName({ name, citystatezip }) {
+    await this.goto({
+      url:
+        url.format({
+          protocol: "https:",
+          hostname: "www.truepeoplesearch.com",
+          pathname: "/details",
+        }) +
+        "?" +
+        qs.stringify({ name, citystatezip, rid: "0x0" }),
+    });
+    return await this._resultWorkflow();
+  }
+  async searchAddress({ streetaddress, citystatezip }) {
+    await this.goto({
+      url:
+        url.format({
+          protocol: "https:",
+          hostname: "www.truepeoplesearch.com",
+          pathname: "/details",
+        }) +
+        "?" +
+        qs.stringify({ streetaddress, citystatezip, rid: "0x0" }),
+    });
+    return await this._resultWorkflow();
   }
   async toObject() {
     const result = await super.toObject();
@@ -185,12 +270,18 @@ export class TruePuppeteer extends BasePuppeteer {
       if (this._browser) this._browser.close();
     }
     const port = Math.floor(Math.random() * 10000) + 30000;
-    const proxyOpts = proxyStringToV2ray(this.ln(await cycleProxy() || await buyProxy()));
+    const proxyOpts = proxyStringToV2ray(
+      this.ln((await cycleProxy()) || (await buyProxy()))
+    );
     this.logger.info(proxyOpts);
-    this.v2 = await makeV2ray(proxyOpts, port, proxyStringToV2ray(this.ln(await cycleIpv4Proxy())));
+    this.v2 = await makeV2ray(
+      proxyOpts,
+      port,
+      proxyStringToV2ray(this.ln(await cycleIpv4Proxy()))
+    );
     this.initializeOpts.proxyServer = "socks5://[::1]:" + String(port);
     const newInstance = await (this.constructor as any).initialize({
-      ...this.initializeOpts
+      ...this.initializeOpts,
     });
     this._browser = newInstance._browser;
     this._page = newInstance._page;
@@ -259,7 +350,9 @@ export class TruePuppeteer extends BasePuppeteer {
         }),
         args: [],
       });
-    return Boolean(this.textContent.match(/(?:Human\stest|IP.*has.*been.*rate)/));
+    return Boolean(
+      this.textContent.match(/(?:Human\stest|IP.*has.*been.*rate)/)
+    );
   }
   async createSession() {
     while (true) {
@@ -267,8 +360,12 @@ export class TruePuppeteer extends BasePuppeteer {
       await this.restartWithNewProxy();
       await this.timeout({ n: 1000 });
       try {
-        await this.fetchUri({ uri: 'https://ip.seeip.org/json?', method: 'GET', config: {} });
-	this.ln(JSON.parse(this.textContent));
+        await this.fetchUri({
+          uri: "https://ip.seeip.org/json?",
+          method: "GET",
+          config: {},
+        });
+        this.ln(JSON.parse(this.textContent));
         await this.homepage();
         return { success: true };
       } catch (e) {
@@ -279,7 +376,7 @@ export class TruePuppeteer extends BasePuppeteer {
   }
   async goto(o) {
     this.logger.info("goto: " + o.url);
-    if (!o.noTimeout)  await this.timeout({ n: 10000 });
+    if (!o.noTimeout) await this.timeout({ n: 10000 });
     await super.goto(o);
     if (await this.isRateLimit()) {
       this.logger.info(await this._page.content());
@@ -288,8 +385,8 @@ export class TruePuppeteer extends BasePuppeteer {
         await this._page.solveRecaptchas();
         await this.timeout({ n: 1000 });
         await this.click({ selector: 'button[type="submit"]' });
-	await this.timeout({ n: 1000 });
-	return { success: true };
+        await this.timeout({ n: 1000 });
+        return { success: true };
       }
       await this.createSession();
       await this.goto(o);
@@ -366,9 +463,10 @@ export class TruePuppeteer extends BasePuppeteer {
       await fs.writeFile(path.join(directory, "LOCK"), "");
       await this.constructNameIndex();
       process.chdir(directory);
-      if (await fs.exists(path.join(directory, "LOCK"))) await fs.unlink(path.join(directory, "LOCK")).catch((err) => {
-        this.logger.error(err.stack);
-      });
+      if (await fs.exists(path.join(directory, "LOCK")))
+        await fs.unlink(path.join(directory, "LOCK")).catch((err) => {
+          this.logger.error(err.stack);
+        });
       process.chdir(cwd);
     }
     this.logger.info("name index built");
@@ -381,10 +479,10 @@ export class TruePuppeteer extends BasePuppeteer {
     const alphabet = this.getAlphabet();
     for (const char of alphabet) {
       const letterDirectory = path.join(cwd, char);
-      if (await fs.exists(path.join(letterDirectory, 'DONE'))) continue;
+      if (await fs.exists(path.join(letterDirectory, "DONE"))) continue;
       process.chdir(letterDirectory);
       await this.constructPersonListForLetter();
-      await fs.writeFile(path.join(process.cwd(), 'DONE'), '');
+      await fs.writeFile(path.join(process.cwd(), "DONE"), "");
       process.chdir(cwd);
     }
     this.logger.info("built person list");
@@ -394,10 +492,10 @@ export class TruePuppeteer extends BasePuppeteer {
     const cwd = process.cwd();
     for (const lastName of randomizeArray(lastNames)) {
       const lastNameDirectory = path.join(cwd, lastName);
-      if (await fs.exists(path.join(lastNameDirectory, 'DONE'))) continue;
+      if (await fs.exists(path.join(lastNameDirectory, "DONE"))) continue;
       process.chdir(lastNameDirectory);
       await this.constructPersonListWithinLastName();
-      await fs.writeFile(path.join(lastNameDirectory, 'DONE'), '');
+      await fs.writeFile(path.join(lastNameDirectory, "DONE"), "");
       process.chdir(cwd);
     }
   }
@@ -408,21 +506,26 @@ export class TruePuppeteer extends BasePuppeteer {
     for (const char of alphabet) {
       const directory = path.join(cwd, char);
       process.chdir(directory);
-      if (await fs.exists(path.join(directory, "LOCK")) || await fs.exists(path.join(directory, 'DONE'))) continue;
+      if (
+        (await fs.exists(path.join(directory, "LOCK"))) ||
+        (await fs.exists(path.join(directory, "DONE")))
+      )
+        continue;
       await fs.writeFile(path.join(directory, "LOCK"), "");
       await this.constructNameIndex();
       const directories = await getDirectoriesInCwd();
       for (const subdirectory of directories) {
         process.chdir(subdirectory);
-	if (await fs.exists(path.join(process.cwd(), 'DONE'))) continue;
+        if (await fs.exists(path.join(process.cwd(), "DONE"))) continue;
         await this.constructPersonList();
-	await fs.writeFile(path.join(process.cwd(), 'DONE'), '');
+        await fs.writeFile(path.join(process.cwd(), "DONE"), "");
       }
-      await fs.writeFile(path.join(directory, 'DONE'), '');
+      await fs.writeFile(path.join(directory, "DONE"), "");
       process.chdir(directory);
-      if (await fs.exists(path.join(directory, "LOCK"))) await fs.unlink(path.join(directory, "LOCK")).catch((err) => {
-        this.logger.error(err.stack);
-      });
+      if (await fs.exists(path.join(directory, "LOCK")))
+        await fs.unlink(path.join(directory, "LOCK")).catch((err) => {
+          this.logger.error(err.stack);
+        });
       process.chdir(cwd);
     }
     this.logger.info("done");
@@ -600,12 +703,12 @@ export class TruePuppeteer extends BasePuppeteer {
       });
       const people = peopleEls.map((v) => {
         const deathEl = v.find('span[itemprop="deathdate"]');
-	const ageEl = v.find('div.row div.col span.content-value');
-	const age = ageEl ? ageEl.text().trim() : deathEl.text().trim();
+        const ageEl = v.find("div.row div.col span.content-value");
+        const age = ageEl ? ageEl.text().trim() : deathEl.text().trim();
         const person = {
           href: v.attr("itemid"),
-          label: v.find('span.h4').eq(0).text().trim(),
-          age
+          label: v.find("span.h4").eq(0).text().trim(),
+          age,
         };
         const prefix = 'div[itemid="' + person.href + '"]';
         return {

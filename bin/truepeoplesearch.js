@@ -7,8 +7,8 @@ const logger = createLogger(require('../package').name);
 const path = require('path');
 
 const cli = new PuppeteerCLI({
-  programName: 'truepeoplescrape',
-  puppeteerClassPath: path.join(__dirname, '../lib/truepeoplescrape'),
+  programName: 'truepeoplesearch',
+  puppeteerClassPath: path.join(__dirname, '../lib/truepeoplesearch'),
   logger
 });
  

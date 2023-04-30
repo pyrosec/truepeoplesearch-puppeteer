@@ -1,16 +1,16 @@
 {
-  "name": "truepeoplescrape",
+  "name": "truepeoplesearch-puppeteer",
   "version": "0.1.0",
   "scripts": {
     "build": "tsc"
   },
   "bin": {
-    "truepeoplescrape": "./bin/truepeoplescrape.js",
+    "truepeoplesearch": "./bin/truepeoplesearch.js",
     "peoplegrep": "./bin/peoplegrep.js"
   },
   "description": "truepeoplesearch.com scraper",
   "main": "lib/index.js",
-  "repository": "https://github.com/pyrosec/truepeoplescrape",
+  "repository": "https://github.com/pyrosec/truepeoplesearch",
   "license": "MIT",
   "private": false,
   "dependencies": {
@@ -23,6 +23,7 @@
     "node-fetch": "2",
     "proxy6": "git+https://github.com/pyrosec/proxy6.git",
     "puppeteer-extra-plugin-recaptcha": "^3.6.6",
+    "querystring": "^0.2.1",
     "socks-proxy-agent": "^7.0.0",
     "v2ray-handle": "git+https://github.com/pyrosec/v2ray-handle.git"
   },

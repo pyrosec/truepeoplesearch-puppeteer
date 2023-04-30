@@ -1,1 +1,1 @@
-export * from "./truepeoplescrape";
+export * from "./truepeoplesearch";
