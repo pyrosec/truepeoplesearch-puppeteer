@@ -194,6 +194,7 @@ export class TruePuppeteer extends BasePuppeteer {
     const page = this._page;
     let row = 6;
     const content = await page.content();
+    this.row = 0;
     try {
       return {
         person: await page.$eval(`div#personDetails > div:nth-child(${this.next()}) span`, (el) => el.innerText),
