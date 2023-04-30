@@ -220,8 +220,10 @@ export class TruePuppeteer extends BasePuppeteer {
     return result;
   }
   async searchPhone({ phone }) {
+    await this.homepage();
     await this.goto({
       url: "https://www.truepeoplesearch.com/details?phoneno=" + phone + "&rid=0x0",
+      noTimeout: true
     });
     return await this._resultWorkflow();
   }
@@ -229,6 +231,7 @@ export class TruePuppeteer extends BasePuppeteer {
     return await this.extractData();
   }
   async searchName({ name, citystatezip }) {
+    await this.homepage();
     await this.goto({
       url:
         url.format({
@@ -238,10 +241,12 @@ export class TruePuppeteer extends BasePuppeteer {
         }) +
         "?" +
         qs.stringify({ name, citystatezip, rid: "0x0" }),
+      noTimeout: true
     });
     return await this._resultWorkflow();
   }
   async searchAddress({ streetaddress, citystatezip }) {
+    await this.homepage();
     await this.goto({
       url:
         url.format({
@@ -251,6 +256,7 @@ export class TruePuppeteer extends BasePuppeteer {
         }) +
         "?" +
         qs.stringify({ streetaddress, citystatezip, rid: "0x0" }),
+      noTimeout: true
     });
     return await this._resultWorkflow();
   }
@@ -272,7 +278,7 @@ export class TruePuppeteer extends BasePuppeteer {
     }
     const port = Math.floor(Math.random() * 10000) + 30000;
     const proxyOpts = proxyStringToV2ray(
-      this.ln((await cycleProxy()) || (await buyProxy()))
+      this.ln(await buyProxy())
     );
     this.logger.info(proxyOpts);
     this.v2 = await makeV2ray(
