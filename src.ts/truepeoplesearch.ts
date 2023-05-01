@@ -222,7 +222,7 @@ export class TruePuppeteer extends BasePuppeteer {
   async searchPhone({ phone, rid }) {
     await this.homepage();
     await this.goto({
-      url: "https://www.truepeoplesearch.com/details?phoneno=" + phone + "&rid=0x" + Number(rid).toString(16),
+      url: "https://www.truepeoplesearch.com/details?phoneno=" + phone + "&rid=0x" + Number(rid || 0).toString(16),
       noTimeout: true
     });
     return await this._resultWorkflow();
@@ -240,7 +240,7 @@ export class TruePuppeteer extends BasePuppeteer {
           pathname: "/details",
         }) +
         "?" +
-        qs.stringify({ name, citystatezip, rid: "0x" + Number(rid).toString(16) }),
+        qs.stringify({ name, citystatezip, rid: "0x" + Number(rid || 0).toString(16) }),
       noTimeout: true
     });
     return await this._resultWorkflow();
@@ -255,7 +255,7 @@ export class TruePuppeteer extends BasePuppeteer {
           pathname: "/details",
         }) +
         "?" +
-        qs.stringify({ streetaddress, citystatezip, rid: "0x" + Number(rid).toString(16) }),
+        qs.stringify({ streetaddress, citystatezip, rid: "0x" + Number(rid || 0).toString(16) }),
       noTimeout: true
     });
     return await this._resultWorkflow();
@@ -267,10 +267,6 @@ export class TruePuppeteer extends BasePuppeteer {
     delete result.textContent;
     return result;
   }
-  ln(v) {
-    this.logger.info(v);
-    return v;
-  }
   async restartWithNewProxy() {
     if (this.v2) {
       this.v2.kill();
@@ -278,13 +274,13 @@ export class TruePuppeteer extends BasePuppeteer {
     }
     const port = Math.floor(Math.random() * 10000) + 30000;
     const proxyOpts = proxyStringToV2ray(
-      this.ln(await buyProxy())
+      await buyProxy()
     );
     this.logger.info(proxyOpts);
     this.v2 = await makeV2ray(
       proxyOpts,
       port,
-      proxyStringToV2ray(this.ln(await cycleIpv4Proxy()))
+      proxyStringToV2ray(await cycleIpv4Proxy())
     );
     this.initializeOpts.proxyServer = "socks5://[::1]:" + String(port);
     const newInstance = await (this.constructor as any).initialize({
@@ -372,7 +368,6 @@ export class TruePuppeteer extends BasePuppeteer {
           method: "GET",
           config: {},
         });
-        this.ln(JSON.parse(this.textContent));
         await this.homepage();
         return { success: true };
       } catch (e) {
@@ -386,7 +381,6 @@ export class TruePuppeteer extends BasePuppeteer {
     if (!o.noTimeout) await this.timeout({ n: 10000 });
     await super.goto(o);
     if (await this.isRateLimit()) {
-      this.logger.info(await this._page.content());
       if (await this.hasCaptcha()) {
         this.logger.info("solve captcha");
         await this._page.solveRecaptchas();

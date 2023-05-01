@@ -48,8 +48,9 @@ export declare class TruePuppeteer extends BasePuppeteer {
         associates: any;
     }>;
     next(proceed?: any): number;
-    searchPhone({ phone }: {
+    searchPhone({ phone, rid }: {
         phone: any;
+        rid: any;
     }): Promise<{
         person: any;
         age: any;
@@ -72,9 +73,10 @@ export declare class TruePuppeteer extends BasePuppeteer {
         relatives: any;
         associates: any;
     }>;
-    searchName({ name, citystatezip }: {
+    searchName({ name, citystatezip, rid }: {
         name: any;
         citystatezip: any;
+        rid: any;
     }): Promise<{
         person: any;
         age: any;
@@ -86,9 +88,10 @@ export declare class TruePuppeteer extends BasePuppeteer {
         relatives: any;
         associates: any;
     }>;
-    searchAddress({ streetaddress, citystatezip }: {
+    searchAddress({ streetaddress, citystatezip, rid }: {
         streetaddress: any;
         citystatezip: any;
+        rid: any;
     }): Promise<{
         person: any;
         age: any;
@@ -104,7 +107,6 @@ export declare class TruePuppeteer extends BasePuppeteer {
         content: string;
         cookies: any;
     }>;
-    ln(v: any): any;
     restartWithNewProxy(): Promise<void>;
     openBrowser(): Promise<void>;
     homepage(): Promise<void>;
