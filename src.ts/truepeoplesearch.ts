@@ -219,10 +219,10 @@ export class TruePuppeteer extends BasePuppeteer {
     if (proceed) this.row++;
     return result;
   }
-  async searchPhone({ phone }) {
+  async searchPhone({ phone, rid }) {
     await this.homepage();
     await this.goto({
-      url: "https://www.truepeoplesearch.com/details?phoneno=" + phone + "&rid=0x0",
+      url: "https://www.truepeoplesearch.com/details?phoneno=" + phone + "&rid=0x" + Number(rid).toString(16),
       noTimeout: true
     });
     return await this._resultWorkflow();
@@ -230,7 +230,7 @@ export class TruePuppeteer extends BasePuppeteer {
   async _resultWorkflow() {
     return await this.extractData();
   }
-  async searchName({ name, citystatezip }) {
+  async searchName({ name, citystatezip, rid }) {
     await this.homepage();
     await this.goto({
       url:
@@ -240,12 +240,12 @@ export class TruePuppeteer extends BasePuppeteer {
           pathname: "/details",
         }) +
         "?" +
-        qs.stringify({ name, citystatezip, rid: "0x0" }),
+        qs.stringify({ name, citystatezip, rid: "0x" + Number(rid).toString(16) }),
       noTimeout: true
     });
     return await this._resultWorkflow();
   }
-  async searchAddress({ streetaddress, citystatezip }) {
+  async searchAddress({ streetaddress, citystatezip, rid }) {
     await this.homepage();
     await this.goto({
       url:
@@ -255,7 +255,7 @@ export class TruePuppeteer extends BasePuppeteer {
           pathname: "/details",
         }) +
         "?" +
-        qs.stringify({ streetaddress, citystatezip, rid: "0x0" }),
+        qs.stringify({ streetaddress, citystatezip, rid: "0x" + Number(rid).toString(16) }),
       noTimeout: true
     });
     return await this._resultWorkflow();
