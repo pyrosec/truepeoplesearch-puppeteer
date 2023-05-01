@@ -12,7 +12,7 @@ export declare const puppeteerCookiesToToughCookie: (cookies: any) => {
 export declare function getDirectoriesInCwd(): Promise<any[]>;
 export declare function cycleIpv4Proxy(): Promise<string>;
 export declare function cycleProxy(): Promise<string>;
-export declare function buyProxy(): Promise<string>;
+export declare function buyProxy(truepeoplesearch: any): Promise<any>;
 export declare const proxyStringToV2ray: (proxyUri: string) => {
     address: string;
     port: number;
@@ -29,6 +29,7 @@ export declare class TruePuppeteer extends BasePuppeteer {
     userAgent: string;
     textContent: string;
     row: number;
+    proxy: string;
     static initialize(o: any): Promise<TruePuppeteer>;
     tryOrNull(fn: any): Promise<any>;
     static formatAddress(v: any): any;

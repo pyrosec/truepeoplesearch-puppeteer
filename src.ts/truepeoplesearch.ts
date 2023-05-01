@@ -96,7 +96,13 @@ export async function cycleProxy() {
   return proxyToExport(changeTo).replace("export all_proxy=", "");
 }
 
-export async function buyProxy() {
+let loaded = false;
+
+export async function buyProxy(truepeoplesearch) {
+  if (!loaded && truepeoplesearch.proxy) {
+    loaded = true;
+    return truepeoplesearch.proxy;
+  }
   const response: any = await proxy6.buy({
     country: "ca",
     version: String(6),
@@ -104,10 +110,12 @@ export async function buyProxy() {
     count: 1,
     type: "socks",
   });
-  return proxyToExport(Object.values(response.list)[0]).replace(
+  const record = proxyToExport(Object.values(response.list)[0]).replace(
     "export all_proxy=",
     ""
   );
+  truepeoplesearch.proxy = record;
+  return record;
 }
 
 export const proxyStringToV2ray = (proxyUri: string) => {
@@ -165,6 +173,7 @@ export class TruePuppeteer extends BasePuppeteer {
   public userAgent: string;
   public textContent: string;
   public row: number;
+  public proxy: string;
   static async initialize(o) {
     const result = (await super.initialize(o)) as TruePuppeteer;
     await result._page.setDefaultTimeout(0);
@@ -274,7 +283,7 @@ export class TruePuppeteer extends BasePuppeteer {
     }
     const port = Math.floor(Math.random() * 10000) + 30000;
     const proxyOpts = proxyStringToV2ray(
-      await buyProxy()
+      await buyProxy(this)
     );
     this.logger.info(proxyOpts);
     this.v2 = await makeV2ray(
