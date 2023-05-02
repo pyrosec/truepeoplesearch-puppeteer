@@ -239,6 +239,26 @@ export class TruePuppeteer extends BasePuppeteer {
   async _resultWorkflow() {
     return await this.extractData();
   }
+  async walk({ prop, data }) {
+    const result = [];
+    while (true) {
+      let rid = 0;
+      const response = await this['search' + prop]({ ...data, rid });
+      rid++;
+      if (!response) return result;
+      result.push(response);
+    }
+    return result;
+  }
+  async walkName({ name, citystatezip }) {
+    return await this.walk({ prop: 'Name', data: { name, citystatezip } });
+  }
+  async walkPhone({ phone }) {
+    return await this.walk({ prop: 'Phone', data: { phone } });
+  }
+  async walkAddress({ streetaddress, citystatezip }) {
+    return await this.walk({ prop: 'Address', data: { streetaddress, citystatezip } });
+  }
   async searchName({ name, citystatezip, rid }) {
     await this.homepage();
     await this.goto({
@@ -650,7 +670,6 @@ export class TruePuppeteer extends BasePuppeteer {
       return false;
     }
   }
-
   async scrapePeople() {
     if (this._browser)
       return await this.evaluate({

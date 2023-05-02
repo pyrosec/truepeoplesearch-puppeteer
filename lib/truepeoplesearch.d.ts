@@ -74,6 +74,21 @@ export declare class TruePuppeteer extends BasePuppeteer {
         relatives: any;
         associates: any;
     }>;
+    walk({ prop, data }: {
+        prop: any;
+        data: any;
+    }): Promise<any[]>;
+    walkName({ name, citystatezip }: {
+        name: any;
+        citystatezip: any;
+    }): Promise<any[]>;
+    walkPhone({ phone }: {
+        phone: any;
+    }): Promise<any[]>;
+    walkAddress({ streetaddress, citystatezip }: {
+        streetaddress: any;
+        citystatezip: any;
+    }): Promise<any[]>;
     searchName({ name, citystatezip, rid }: {
         name: any;
         citystatezip: any;
