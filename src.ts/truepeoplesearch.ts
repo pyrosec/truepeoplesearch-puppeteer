@@ -329,6 +329,7 @@ export class TruePuppeteer extends BasePuppeteer {
   async _resultWorkflow() {
     const result = await this.extractData();
     if (result && !result.person) return null;
+    return result;
   }
   async walk({ prop, data }) {
     const result = [];
