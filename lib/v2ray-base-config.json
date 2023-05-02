@@ -1,0 +1,47 @@
+{
+    "dns": {
+        "servers": [
+            "1.1.1.1",
+            "1.0.0.1"
+        ]
+    },
+    "inbounds": [
+        {
+            "protocol": "socks",
+            "port": null,
+            "listen": "[::1]",
+            "settings": {
+                "auth": "noauth",
+                "udp": true,
+                "ip": "[::1]",
+                "port": null
+            }
+        }
+    ],
+    "routing": {
+        "rules": [
+            {
+                "type": "field",
+                "ip": [
+                    "0.0.0.0/0"
+                ],
+                "outboundTag": "proxied"
+            }
+        ],
+        "balancers": [],
+        "domainStrategy": "AsIs"
+    },
+    "outbounds": [
+        {
+            "protocol": "socks",
+            "settings": {
+                "servers": []
+            }
+        },
+        {
+            "tag": "direct_bypass",
+            "protocol": "freedom",
+            "settings": {}
+        }
+    ]
+}
