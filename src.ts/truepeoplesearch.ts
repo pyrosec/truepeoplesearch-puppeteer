@@ -200,10 +200,6 @@ export class TruePuppeteer extends BasePuppeteer {
       type,
     };
   }
-  ln(v) {
-    console.log(v);
-    return v;
-  }
   async _findRow(tag) {
     const page = this._page;
     return await page.evaluate((_tag) => {
@@ -241,7 +237,7 @@ export class TruePuppeteer extends BasePuppeteer {
           if (split[2]) record.time = split[2];
           return record;
         };
-        const firstRow = els[0];
+        const firstRow = els[0] || { querySelector() { return { innerText: '' } } };
         const person = firstRow.querySelector(".h2").innerText.trim();
         const age = firstRow.querySelector(".content-value").innerText.trim();
         const address = toAddress(
@@ -331,7 +327,8 @@ export class TruePuppeteer extends BasePuppeteer {
     return await this._resultWorkflow();
   }
   async _resultWorkflow() {
-    return await this.extractData();
+    const result = await this.extractData();
+    if (result && !result.person) return null;
   }
   async walk({ prop, data }) {
     const result = [];
@@ -410,7 +407,6 @@ export class TruePuppeteer extends BasePuppeteer {
     }
     const port = Math.floor(Math.random() * 10000) + 30000;
     const proxyOpts = proxyStringToV2ray(await buyProxy(this));
-    this.logger.info(proxyOpts);
     this.v2 = await makeV2ray(
       proxyOpts,
       port,

@@ -37,7 +37,6 @@ export declare class TruePuppeteer extends BasePuppeteer {
         phone: any;
         type: any;
     };
-    ln(v: any): any;
     _findRow(tag: any): Promise<any>;
     extractData(): Promise<any>;
     next(proceed?: any): number;
