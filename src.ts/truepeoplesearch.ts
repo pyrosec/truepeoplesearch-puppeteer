@@ -259,7 +259,7 @@ export class TruePuppeteer extends BasePuppeteer {
                 else r.type = v;
                 return r;
               }, {})
-          ).filter((v) => !v.number);
+          ).filter((v) => v.number);
         const emailAddresses = getElement("Email Addresses")
           .innerText.replace("Email Addresses", "")
           .trim()
@@ -327,7 +327,6 @@ export class TruePuppeteer extends BasePuppeteer {
     return await this._resultWorkflow();
   }
   async _resultWorkflow() {
-    await this.waitForSelector({ selector: 'div' });
     const result = await this.extractData();
     if (result && !result.person) return null;
     return result;
