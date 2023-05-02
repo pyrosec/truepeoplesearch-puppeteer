@@ -249,12 +249,10 @@ export class TruePuppeteer extends BasePuppeteer {
             .querySelector(".content-value")
             .innerText.trim()
         );
-        const phoneNumbers = getElement("Phone Numbers")
-          .innerText.replace("Phone Numbers", "")
-          .trim()
-          .split("\n")
+        const phoneNumbers = [].slice
+          .call(getElement("Phone Numbers").querySelectorAll(".content-value"))
           .map((v) => {
-            const split = v.split("-");
+            const split = v.innerText.split("-");
             return [split.slice(0, -1).join("-"), split[split.length - 1]];
           })
           .map((v) =>
@@ -265,7 +263,7 @@ export class TruePuppeteer extends BasePuppeteer {
                 else r.type = v;
                 return r;
               }, {})
-          );
+          ).filter((v) => !v.number);
         const emailAddresses = getElement("Email Addresses")
           .innerText.replace("Email Addresses", "")
           .trim()
@@ -282,6 +280,7 @@ export class TruePuppeteer extends BasePuppeteer {
           .call(
             getElement("Previous Addresses").querySelectorAll(".content-value")
           )
+          .filter((v) => v.innerText)
           .map((v) => toAddress(v.innerText.trim()));
         const relatives = getElement("Possible Relatives")
           .innerText.replace("Possible Relatives", "")
