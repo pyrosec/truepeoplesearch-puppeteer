@@ -37,43 +37,15 @@ export declare class TruePuppeteer extends BasePuppeteer {
         phone: any;
         type: any;
     };
-    extractData(): Promise<{
-        person: any;
-        age: any;
-        currentAddress: any;
-        phones: any;
-        emails: any;
-        names: any;
-        addresses: any;
-        relatives: any;
-        associates: any;
-    }>;
+    ln(v: any): any;
+    _findRow(tag: any): Promise<any>;
+    extractData(): Promise<any>;
     next(proceed?: any): number;
     searchPhone({ phone, rid }: {
         phone: any;
         rid: any;
-    }): Promise<{
-        person: any;
-        age: any;
-        currentAddress: any;
-        phones: any;
-        emails: any;
-        names: any;
-        addresses: any;
-        relatives: any;
-        associates: any;
-    }>;
-    _resultWorkflow(): Promise<{
-        person: any;
-        age: any;
-        currentAddress: any;
-        phones: any;
-        emails: any;
-        names: any;
-        addresses: any;
-        relatives: any;
-        associates: any;
-    }>;
+    }): Promise<any>;
+    _resultWorkflow(): Promise<any>;
     walk({ prop, data }: {
         prop: any;
         data: any;
@@ -93,32 +65,12 @@ export declare class TruePuppeteer extends BasePuppeteer {
         name: any;
         citystatezip: any;
         rid: any;
-    }): Promise<{
-        person: any;
-        age: any;
-        currentAddress: any;
-        phones: any;
-        emails: any;
-        names: any;
-        addresses: any;
-        relatives: any;
-        associates: any;
-    }>;
+    }): Promise<any>;
     searchAddress({ streetaddress, citystatezip, rid }: {
         streetaddress: any;
         citystatezip: any;
         rid: any;
-    }): Promise<{
-        person: any;
-        age: any;
-        currentAddress: any;
-        phones: any;
-        emails: any;
-        names: any;
-        addresses: any;
-        relatives: any;
-        associates: any;
-    }>;
+    }): Promise<any>;
     toObject(): Promise<this & {
         content: string;
         cookies: any;

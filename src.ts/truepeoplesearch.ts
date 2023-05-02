@@ -186,18 +186,32 @@ export class TruePuppeteer extends BasePuppeteer {
     try {
       return await fn();
     } catch (e) {
+      console.error(e);
       return null;
     }
   }
   static formatAddress(v) {
-    return v.replace(/\n/g, ', ');
+    return v.replace(/\n/g, ", ");
   }
   static phoneToObject(s) {
-    const [ phone, type ] = s.split(' - ');
+    const [phone, type] = s.split(" - ");
     return {
       phone,
-      type
+      type,
     };
+  }
+  ln(v) {
+    console.log(v);
+    return v;
+  }
+  async _findRow(tag) {
+    const page = this._page;
+    return await page.evaluate((_tag) => {
+      const els = [].slice.call(
+        document.querySelectorAll("#personDetails > div")
+      );
+      return Number(els.findIndex((v) => v.innerText.match(_tag)));
+    }, tag);
   }
   async extractData() {
     const page = this._page;
@@ -205,24 +219,101 @@ export class TruePuppeteer extends BasePuppeteer {
     const content = await page.content();
     this.row = 0;
     try {
-      return {
-        person: await page.$eval(`div#personDetails > div:nth-child(${this.next()}) span`, (el) => el.innerText),
-        age: await page.$eval(`div#personDetails > div:nth-child(${this.next(true)}) span.content-value`, (el) => el.innerText),
-        currentAddress: content.match('Current Address') ? TruePuppeteer.formatAddress(await page.$eval(`div#personDetails > div:nth-child(${this.next(true)}) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1)`, (el) => el.innerText)) : null,
-        phones: await this.tryOrNull(async () => content.match('Phone Numbers') ? (await page.$$eval(`div#personDetails > div:nth-child(${this.next(true)}) > div:nth-child(2) div.content-value`, (els) => els.map((v) => v.innerText.trim()))).map(TruePuppeteer.phoneToObject) : []),
-        emails: await this.tryOrNull(async () => content.match('mails') ? await page.$$eval(`div#personDetails > div:nth-child(${this.next(true)}) > div:nth-child(2) div.content-value`, (els) => els.map((v) => v.innerText.trim())) : []),
-        names: await this.tryOrNull(async () => content.match('Names') ? await page.$eval(`div#personDetails > div:nth-child(${this.next(true)}) div.content-value`, (el) => el.innerText.trim().split(',').map((v) => v.trim())) : []),
-        addresses: await this.tryOrNull(async () => content.match('Previous Addresses') ? (await page.$$eval(`div#personDetails > div:nth-child(${this.next(true)}) div.content-value`, (els) => els.map((v) => v.innerText.trim()))).map(TruePuppeteer.formatAddress) : []),
-        relatives: await this.tryOrNull(async () => content.match('Relatives') ? await page.$eval(`div#personDetails > div:nth-child(${this.next(true)}) div.content-value`, (el) => el.innerText.trim().split(',').map((v) => v.trim())) : []),
-        associates: await this.tryOrNull(async () => content.match('Associates') ? await page.$eval(`div#personDetails > div:nth-child(${this.next(true)}) div.content-value`, (el) => el.innerText.trim().split(',').map((v) => v.trim())) : [])
-      }
+      return await page.evaluate(() => {
+        const els = [].slice.call(
+          document.querySelectorAll("div#personDetails > div")
+        );
+        const getElement = (tag) =>
+          els.find((v) => v.innerText.match(tag)) || {
+            innerText: "",
+            querySelector: () => ({ innerText: "" }),
+            querySelectorAll: () => [{ innerText: "" }],
+          };
+        const toAddress = (v) => {
+          const split = v
+            .split("\n")
+            .filter(Boolean)
+            .map((v) => v.trim());
+          const record: any = {
+            streetaddress: split[0],
+            citystatezip: split[1],
+          };
+          if (split[2]) record.time = split[2];
+          return record;
+        };
+        const firstRow = els[0];
+        const person = firstRow.querySelector(".h2").innerText.trim();
+        const age = firstRow.querySelector(".content-value").innerText.trim();
+        const address = toAddress(
+          getElement("Current Address")
+            .querySelector(".content-value")
+            .innerText.trim()
+        );
+        const phoneNumbers = getElement("Phone Numbers")
+          .innerText.replace("Phone Numbers", "")
+          .trim()
+          .split("\n")
+          .map((v) => {
+            const split = v.split("-");
+            return [split.slice(0, -1).join("-"), split[split.length - 1]];
+          })
+          .map((v) =>
+            v
+              .map((v) => v.trim())
+              .reduce((r, v, i) => {
+                if (!i) r.number = v;
+                else r.type = v;
+                return r;
+              }, {})
+          );
+        const emailAddresses = getElement("Email Addresses")
+          .innerText.replace("Email Addresses", "")
+          .trim()
+          .split("\n")
+          .map((v) => v.trim())
+          .filter(Boolean);
+        const associatedNames = getElement("Associated Names")
+          .innerText.replace("Associated Names", "")
+          .trim()
+          .split(",")
+          .map((v) => v.trim())
+          .filter(Boolean);
+        const previousAddresses = [].slice
+          .call(
+            getElement("Previous Addresses").querySelectorAll(".content-value")
+          )
+          .map((v) => toAddress(v.innerText.trim()));
+        const relatives = getElement("Possible Relatives")
+          .innerText.replace("Possible Relatives", "")
+          .trim()
+          .split(",")
+          .map((v) => v.trim())
+          .filter(Boolean);
+        const associates = getElement("Possible Associates")
+          .innerText.replace("Possible Associates", "")
+          .trim()
+          .split(",")
+          .map((v) => v.trim())
+          .filter(Boolean);
+        return {
+          person,
+          age,
+          address,
+          phoneNumbers,
+          emailAddresses,
+          previousAddresses,
+          associatedNames,
+          relatives,
+          associates,
+        };
+      });
     } catch (e) {
-      if (process.env.NODE_ENV === 'development') console.error(e);
+      if (process.env.NODE_ENV === "development") console.error(e);
       return null;
     }
   }
   next(proceed?) {
-    const fields = [ 1, 4, 6, 10, 13, 15, 18, 20 ];
+    const fields = [1, 4, 6, 10, 13, 15, 18, 20];
     if (!this.row) this.row = 0;
     const result = fields[this.row];
     if (proceed) this.row++;
@@ -231,8 +322,12 @@ export class TruePuppeteer extends BasePuppeteer {
   async searchPhone({ phone, rid }) {
     await this.homepage();
     await this.goto({
-      url: "https://www.truepeoplesearch.com/details?phoneno=" + phone + "&rid=0x" + Number(rid || 0).toString(16),
-      noTimeout: true
+      url:
+        "https://www.truepeoplesearch.com/details?phoneno=" +
+        phone +
+        "&rid=0x" +
+        Number(rid || 0).toString(16),
+      noTimeout: true,
     });
     return await this._resultWorkflow();
   }
@@ -241,23 +336,28 @@ export class TruePuppeteer extends BasePuppeteer {
   }
   async walk({ prop, data }) {
     const result = [];
+    let rid = 0;
     while (true) {
-      let rid = 0;
-      const response = await this['search' + prop]({ ...data, rid });
+      const response = await this["search" + prop]({ ...data, rid });
+      this.homepage = async () => {};
       rid++;
       if (!response) return result;
       result.push(response);
     }
+    delete this.homepage;
     return result;
   }
   async walkName({ name, citystatezip }) {
-    return await this.walk({ prop: 'Name', data: { name, citystatezip } });
+    return await this.walk({ prop: "Name", data: { name, citystatezip } });
   }
   async walkPhone({ phone }) {
-    return await this.walk({ prop: 'Phone', data: { phone } });
+    return await this.walk({ prop: "Phone", data: { phone } });
   }
   async walkAddress({ streetaddress, citystatezip }) {
-    return await this.walk({ prop: 'Address', data: { streetaddress, citystatezip } });
+    return await this.walk({
+      prop: "Address",
+      data: { streetaddress, citystatezip },
+    });
   }
   async searchName({ name, citystatezip, rid }) {
     await this.homepage();
@@ -269,8 +369,12 @@ export class TruePuppeteer extends BasePuppeteer {
           pathname: "/details",
         }) +
         "?" +
-        qs.stringify({ name, citystatezip, rid: "0x" + Number(rid || 0).toString(16) }),
-      noTimeout: true
+        qs.stringify({
+          name,
+          citystatezip,
+          rid: "0x" + Number(rid || 0).toString(16),
+        }),
+      noTimeout: true,
     });
     return await this._resultWorkflow();
   }
@@ -284,8 +388,12 @@ export class TruePuppeteer extends BasePuppeteer {
           pathname: "/details",
         }) +
         "?" +
-        qs.stringify({ streetaddress, citystatezip, rid: "0x" + Number(rid || 0).toString(16) }),
-      noTimeout: true
+        qs.stringify({
+          streetaddress,
+          citystatezip,
+          rid: "0x" + Number(rid || 0).toString(16),
+        }),
+      noTimeout: true,
     });
     return await this._resultWorkflow();
   }
@@ -302,9 +410,7 @@ export class TruePuppeteer extends BasePuppeteer {
       if (this._browser) this._browser.close();
     }
     const port = Math.floor(Math.random() * 10000) + 30000;
-    const proxyOpts = proxyStringToV2ray(
-      await buyProxy(this)
-    );
+    const proxyOpts = proxyStringToV2ray(await buyProxy(this));
     this.logger.info(proxyOpts);
     this.v2 = await makeV2ray(
       proxyOpts,
