@@ -327,6 +327,7 @@ export class TruePuppeteer extends BasePuppeteer {
     return await this._resultWorkflow();
   }
   async _resultWorkflow() {
+    await this.waitForSelector({ selector: 'body' });
     const result = await this.extractData();
     if (result && !result.person) return null;
     return result;
