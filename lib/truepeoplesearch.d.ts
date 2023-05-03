@@ -13,6 +13,7 @@ export declare function getDirectoriesInCwd(): Promise<any[]>;
 export declare function cycleIpv4Proxy(): Promise<string>;
 export declare function cycleProxy(): Promise<string>;
 export declare function buyProxy(truepeoplesearch: any): Promise<any>;
+export declare const buyOrCycleProxy: (truepeoplesearch: any) => Promise<any>;
 export declare const proxyStringToV2ray: (proxyUri: string) => {
     address: string;
     port: number;

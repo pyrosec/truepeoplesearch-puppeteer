@@ -98,6 +98,8 @@ export async function cycleProxy() {
 
 let loaded = false;
 
+const ln = (v) => ((console.log(v)), v);
+
 export async function buyProxy(truepeoplesearch) {
   if (!loaded && truepeoplesearch.proxy) {
     loaded = true;
@@ -116,6 +118,14 @@ export async function buyProxy(truepeoplesearch) {
   );
   truepeoplesearch.proxy = record;
   return record;
+}
+
+export const buyOrCycleProxy = async (truepeoplesearch) => {
+  try {
+    return await buyProxy(truepeoplesearch);
+  } catch (e) {
+    return await cycleProxy();
+  }
 }
 
 export const proxyStringToV2ray = (proxyUri: string) => {
@@ -337,12 +347,12 @@ export class TruePuppeteer extends BasePuppeteer {
     let rid = 0;
     while (true) {
       const response = await this["search" + prop]({ ...data, rid });
-      this.homepage = async () => {};
+//      this.homepage = async () => {};
       rid++;
       if (!response) return result;
       result.push(response);
     }
-    delete this.homepage;
+ //   delete this.homepage;
     return result;
   }
   async walkName({ name, citystatezip }) {
@@ -408,7 +418,7 @@ export class TruePuppeteer extends BasePuppeteer {
       if (this._browser) this._browser.close();
     }
     const port = Math.floor(Math.random() * 10000) + 30000;
-    const proxyOpts = proxyStringToV2ray(await buyProxy(this));
+    const proxyOpts = proxyStringToV2ray(ln(await buyOrCycleProxy(this)));
     this.v2 = await makeV2ray(
       proxyOpts,
       port,
@@ -518,7 +528,7 @@ export class TruePuppeteer extends BasePuppeteer {
         await this._page.solveRecaptchas();
         await this.timeout({ n: 1000 });
         await this.click({ selector: 'button[type="submit"]' });
-        await this.timeout({ n: 1000 });
+        await this.timeout({ n: 5000 });
         return { success: true };
       }
       await this.createSession();
