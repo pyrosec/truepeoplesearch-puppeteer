@@ -98,15 +98,13 @@ export async function cycleProxy() {
 
 let loaded = false;
 
-const ln = (v) => ((console.log(v)), v);
-
 export async function buyProxy(truepeoplesearch) {
   if (!loaded && truepeoplesearch.proxy) {
     loaded = true;
     return truepeoplesearch.proxy;
   }
   const response: any = await proxy6.buy({
-    country: "ca",
+    country: "us",
     version: String(6),
     period: 3,
     count: 1,
@@ -124,6 +122,7 @@ export const buyOrCycleProxy = async (truepeoplesearch) => {
   try {
     return await buyProxy(truepeoplesearch);
   } catch (e) {
+    console.error(e);
     return await cycleProxy();
   }
 }
@@ -347,12 +346,12 @@ export class TruePuppeteer extends BasePuppeteer {
     let rid = 0;
     while (true) {
       const response = await this["search" + prop]({ ...data, rid });
-//      this.homepage = async () => {};
+      this.homepage = async () => {};
       rid++;
       if (!response) return result;
       result.push(response);
     }
- //   delete this.homepage;
+    delete this.homepage;
     return result;
   }
   async walkName({ name, citystatezip }) {
@@ -418,7 +417,7 @@ export class TruePuppeteer extends BasePuppeteer {
       if (this._browser) this._browser.close();
     }
     const port = Math.floor(Math.random() * 10000) + 30000;
-    const proxyOpts = proxyStringToV2ray(ln(await buyOrCycleProxy(this)));
+    const proxyOpts = proxyStringToV2ray(await buyOrCycleProxy(this));
     this.v2 = await makeV2ray(
       proxyOpts,
       port,
