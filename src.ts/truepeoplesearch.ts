@@ -122,7 +122,7 @@ export const buyOrCycleProxy = async (truepeoplesearch) => {
   try {
     return await buyProxy(truepeoplesearch);
   } catch (e) {
-    console.error(e);
+    if (process.env.NODE_ENV === 'development') console.error(e);
     return await cycleProxy();
   }
 }
