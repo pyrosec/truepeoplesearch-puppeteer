@@ -473,18 +473,18 @@ export class TruePuppeteer extends BasePuppeteer {
     if (this._browser)
       return await this.evaluate({
         script: String(function () {
-          return Boolean(document.body.innerText.match("Human"));
+          return Boolean(document.body.innerText.match("Human test"));
         }),
         args: [],
       });
-    return this.textContent.match("Human");
+    return this.textContent.match("Human test");
   }
   async isRateLimit() {
     if (this._browser)
       return await this.evaluate({
         script: String(function () {
           return (
-            Boolean(document.body.innerText.match("Human")) ||
+            Boolean(document.body.innerText.match("Human test")) ||
             Boolean(
               ((document.querySelector("pre") || {}).innerText || "").match(
                 "rate"
@@ -504,11 +504,6 @@ export class TruePuppeteer extends BasePuppeteer {
       await this.restartWithNewProxy();
       await this.timeout({ n: 1000 });
       try {
-        await this.fetchUri({
-          uri: "https://ip.seeip.org/json?",
-          method: "GET",
-          config: {},
-        });
         await this.homepage();
         return { success: true };
       } catch (e) {
