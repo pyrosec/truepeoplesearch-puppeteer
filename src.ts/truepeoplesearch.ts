@@ -177,7 +177,6 @@ export const makeV2ray = async (proxy, inboundPort, ipv4Proxy) => {
     last.tag = "ipv4";
   }
   lastConfig = config;
-  ln(config, 'CONFIG');
   return await v2ray(config);
 };
 
@@ -433,7 +432,7 @@ export class TruePuppeteer extends BasePuppeteer {
       port,
       proxyStringToV2ray(await cycleIpv4Proxy())
     );
-    this.initializeOpts.proxyServer = "socks5://[::1]:" + String(port);
+    this.initializeOpts.proxyServer = "socks5://127.0.0.1:" + String(port);
     const newInstance = await (this.constructor as any).initialize({
       ...this.initializeOpts,
     });
