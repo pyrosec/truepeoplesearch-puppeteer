@@ -76,9 +76,10 @@ export async function cycleIpv4Proxy() {
   const response: any = await proxy6.getproxy({
     state: "active",
     version: 4,
+    type: 'socks'
   } as any);
   const proxies: any = Object.values(response.list).filter(
-    (v: any) => v.version === "4" || v.version === "3"
+    (v: any) => (v.version === "4" || v.version === "3") && v.type === 'socks'
   );
   const i = Math.floor(Math.random() * proxies.length) - 1;
   const changeTo = proxies[i + 1] || proxies[0];
@@ -281,12 +282,9 @@ export class TruePuppeteer extends BasePuppeteer {
           ).innerText.trim();
           const age = firstRow.querySelector("span").innerText.trim();
           const address = toAddress(getProp("homeLocation").innerText.trim());
-          const ln = (v) => (console.log(v), v);
-          const phoneNumbers = ln(
-            [].slice
-              .call(getElement("Phone Numbers").querySelectorAll(".row"))
-              .slice(1)
-          )
+          const phoneNumbers = [].slice
+            .call(getElement("Phone Numbers").querySelectorAll(".row"))
+            .slice(1)
             .map((v) => toPhone(v.innerText))
             .filter((v) => v.number);
           const emailAddresses = getElement("Email Addresses")
