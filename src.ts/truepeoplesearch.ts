@@ -404,6 +404,10 @@ export class TruePuppeteer extends BasePuppeteer {
     });
     return await this._resultWorkflow();
   }
+  async ipinfo() {
+    await this.goto({ url: 'https://ip.seeip.org/json' });
+    return JSON.parse(await this._page.content());
+  }
   async toObject() {
     const result = await super.toObject();
     delete result.initializeOpts;
@@ -441,6 +445,7 @@ export class TruePuppeteer extends BasePuppeteer {
   }
   async homepage() {
     await this.restartWithNewProxy();
+    await this.timeout({ n: 5000 });
     await this.goto({ url: "https://truepeoplesearch.com", noTimeout: true });
     await this.waitForSelector({ selector: "div#divAppInstall" });
   }

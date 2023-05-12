@@ -71,6 +71,7 @@ export declare class TruePuppeteer extends BasePuppeteer {
         citystatezip: any;
         rid: any;
     }): Promise<any>;
+    ipinfo(): Promise<any>;
     toObject(): Promise<this & {
         content: string;
         cookies: any;
