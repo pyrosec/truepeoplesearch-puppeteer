@@ -177,7 +177,6 @@ export const makeV2ray = async (proxy, inboundPort, ipv4Proxy) => {
     last.tag = "ipv4";
   }
   lastConfig = config;
-  ln(config, 'CONFIG');
   return await v2ray(config);
 };
 
@@ -253,8 +252,8 @@ export class TruePuppeteer extends BasePuppeteer {
           return record;
         };
         const firstRow = els[0] || { querySelector() { return { innerText: '' } } };
-        const person = firstRow.querySelector(".h2").innerText.trim();
-        const age = firstRow.querySelector(".content-value").innerText.trim();
+        const person = (firstRow.querySelector("h2") || firstRow.querySelector("h1")).innerText.trim();
+        const age = firstRow.querySelector("span").innerText.trim();
         const address = toAddress(
           getElement("Current Address")
             .querySelector(".content-value")
