@@ -551,6 +551,10 @@ export class TruePuppeteer extends BasePuppeteer {
     delete result.textContent;
     return result;
   }
+  async waitForCaptcha() {
+    const page = this._page;
+    await this.timeout({ n: 5000 });
+  }
   async restartWithNewProxy() {
     if (this.v2) {
       this.v2.kill();
@@ -660,6 +664,7 @@ export class TruePuppeteer extends BasePuppeteer {
     if (await this.isRateLimit()) {
       if (await this.hasCaptcha()) {
         this.logger.info("solve captcha");
+	await this.waitForCaptcha();
         await this._page.solveRecaptchas();
         await this.timeout({ n: 1000 });
         await this.click({ selector: 'button[type="submit"]' });

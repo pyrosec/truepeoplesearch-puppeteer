@@ -79,6 +79,7 @@ export declare class TruePuppeteer extends BasePuppeteer {
         content: string;
         cookies: any;
     }>;
+    waitForCaptcha(): Promise<void>;
     restartWithNewProxy(): Promise<void>;
     openBrowser(): Promise<void>;
     homepage(): Promise<void>;
