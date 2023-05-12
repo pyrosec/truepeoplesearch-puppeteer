@@ -40,7 +40,9 @@ export declare class TruePuppeteer extends BasePuppeteer {
         type: any;
     };
     _findRow(tag: any): Promise<any>;
+    extractFindPersonData(): Promise<any>;
     extractData(): Promise<any>;
+    extractResultData(): Promise<any>;
     next(proceed?: any): number;
     searchPhone({ phone, rid }: {
         phone: any;

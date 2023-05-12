@@ -122,10 +122,10 @@ export const buyOrCycleProxy = async (truepeoplesearch) => {
   try {
     return await buyProxy(truepeoplesearch);
   } catch (e) {
-    if (process.env.NODE_ENV === 'development') console.error(e);
+    if (process.env.NODE_ENV === "development") console.error(e);
     return await cycleProxy();
   }
-}
+};
 
 export const proxyStringToV2ray = (proxyUri: string) => {
   const parsed = url.parse(proxyUri);
@@ -146,7 +146,11 @@ let lastConfig = clone(v2rayBaseConfig);
 lastConfig.outbounds[0].settings.servers.push({});
 
 export const ln = (v: any, s?: string) => {
-  console.log(...[s, require('util').inspect(v, { colors: true, depth: 15 })].filter(Boolean));
+  console.log(
+    ...[s, require("util").inspect(v, { colors: true, depth: 15 })].filter(
+      Boolean
+    )
+  );
   return v;
 };
 
@@ -223,7 +227,131 @@ export class TruePuppeteer extends BasePuppeteer {
       return Number(els.findIndex((v) => v.innerText.match(_tag)));
     }, tag);
   }
+  async extractFindPersonData() {
+    const page = this._page;
+    try {
+      return (
+        (await page.evaluate(() => {
+          const els = [].slice.call(
+            document.querySelectorAll("div#personDetails > div") || []
+          );
+          const getElement = (tag) =>
+            els.find((v) => v.innerText.match(tag)) || {
+              innerText: "",
+              querySelector() {
+                return {
+                  innerText: "",
+                };
+              },
+              querySelectorAll() {
+                return [];
+              },
+            };
+          const getProp = (tag): any =>
+            document.querySelector('div[itemprop="' + tag + '"]') || {
+              innerText: "",
+            };
+          const toAddress = (v) => {
+            const split = v
+              .split("\n")
+              .filter(Boolean)
+              .map((v) => v.trim());
+            const record: any = {
+              streetaddress: split[0],
+              citystatezip: split[1],
+            };
+            if (split[2]) record.time = split[2];
+            return record;
+          };
+          const firstRow = els[0] || {
+            querySelector() {
+              return { innerText: "" };
+            },
+          };
+          const toPhone = (v) => {
+            const split = v.split("\n");
+            const match = split[0].split("-").map((v) => v.trim());
+            return {
+              number: match.slice(0, -1).join("-"),
+              type: match[match.length - 1],
+            };
+          };
+          const person = (
+            firstRow.querySelector("h1") || firstRow.querySelector("h2")
+          ).innerText.trim();
+          const age = firstRow.querySelector("span").innerText.trim();
+          const address = toAddress(getProp("homeLocation").innerText.trim());
+          const ln = (v) => (console.log(v), v);
+          const phoneNumbers = ln(
+            [].slice
+              .call(getElement("Phone Numbers").querySelectorAll(".row"))
+              .slice(1)
+          )
+            .map((v) => toPhone(v.innerText))
+            .filter((v) => v.number);
+          const emailAddresses = getElement("Email Addresses")
+            .innerText.replace("Email Addresses", "")
+            .trim()
+            .split("\n")
+            .map((v) => v.trim())
+            .filter(Boolean);
+          const associatedNames = getElement("Also Known As")
+            .innerText.replace("Also Known As", "")
+            .trim()
+            .split(",")
+            .map((v) => v.trim())
+            .filter(Boolean);
+          const previousAddresses = [].slice
+            .call(
+              getElement("Previous Addresses").querySelectorAll(
+                'div[itemprop="address"]'
+              )
+            )
+            .filter((v) => v.innerText)
+            .map((v) => toAddress(v.innerText.trim()));
+          const relatives = getElement("Possible Relatives")
+            .innerText.replace("Possible Relatives", "")
+            .trim()
+            .split(/[,|\n]/g)
+            .map((v) => v.trim())
+            .filter(Boolean)
+            .filter((v) => !v.match(/^Born/));
+          const associates = getElement("Possible Associates")
+            .innerText.replace("Possible Associates", "")
+            .trim()
+            .split(/[,|\n]/g)
+            .map((v) => v.trim())
+            .filter(Boolean)
+            .filter((v) => !v.match(/^Born/));
+          return {
+            person,
+            age,
+            address,
+            phoneNumbers,
+            emailAddresses,
+            previousAddresses,
+            associatedNames,
+            relatives,
+            associates,
+          };
+        })) || []
+      );
+    } catch (e) {
+      this.logger.error(e);
+      return [];
+    }
+  }
   async extractData() {
+    const page = this._page;
+    if (
+      await page.evaluate(() =>
+        Boolean(window.location.href.match("find/person"))
+      )
+    )
+      return await this.extractFindPersonData();
+    return await this.extractResultData();
+  }
+  async extractResultData() {
     const page = this._page;
     let row = 6;
     const content = await page.content();
@@ -251,9 +379,13 @@ export class TruePuppeteer extends BasePuppeteer {
           if (split[2]) record.time = split[2];
           return record;
         };
-        const firstRow = els[0] || { querySelector() { return { innerText: '' } } };
-        const person = (firstRow.querySelector("h2") || firstRow.querySelector("h1")).innerText.trim();
-        const age = firstRow.querySelector("span").innerText.trim();
+        const firstRow = els[0] || {
+          querySelector() {
+            return { innerText: "" };
+          },
+        };
+        const person = firstRow.querySelector(".h2").innerText.trim();
+        const age = firstRow.querySelector(".content-value").innerText.trim();
         const address = toAddress(
           getElement("Current Address")
             .querySelector(".content-value")
@@ -273,7 +405,8 @@ export class TruePuppeteer extends BasePuppeteer {
                 else r.type = v;
                 return r;
               }, {})
-          ).filter((v) => v.number);
+          )
+          .filter((v) => v.number);
         const emailAddresses = getElement("Email Addresses")
           .innerText.replace("Email Addresses", "")
           .trim()
@@ -341,7 +474,7 @@ export class TruePuppeteer extends BasePuppeteer {
     return await this._resultWorkflow();
   }
   async _resultWorkflow() {
-    await this.waitForSelector({ selector: 'body' });
+    await this.waitForSelector({ selector: "body" });
     const result = await this.extractData();
     if (result && !result.person) return null;
     return result;
@@ -410,7 +543,7 @@ export class TruePuppeteer extends BasePuppeteer {
     return await this._resultWorkflow();
   }
   async ipinfo() {
-    await this.goto({ url: 'https://ip.seeip.org/json' });
+    await this.goto({ url: "https://ip.seeip.org/json" });
     return JSON.parse(await this._page.content());
   }
   async toObject() {
