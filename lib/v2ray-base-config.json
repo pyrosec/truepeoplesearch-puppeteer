@@ -9,11 +9,11 @@
         {
             "protocol": "socks",
             "port": null,
-            "listen": "[::1]",
+            "listen": "127.0.0.1",
             "settings": {
                 "auth": "noauth",
                 "udp": true,
-                "ip": "[::1]",
+                "ip": "127.0.0.1",
                 "port": null
             }
         }
