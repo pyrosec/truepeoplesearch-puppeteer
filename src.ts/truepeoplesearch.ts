@@ -145,6 +145,11 @@ export const proxyStringToV2ray = (proxyUri: string) => {
 let lastConfig = clone(v2rayBaseConfig);
 lastConfig.outbounds[0].settings.servers.push({});
 
+export const ln = (v: any, s?: string) => {
+  console.log(...[s, require('util').inspect(v, { colors: true, depth: 15 })].filter(Boolean));
+  return v;
+};
+
 export const makeV2ray = async (proxy, inboundPort, ipv4Proxy) => {
   inboundPort =
     inboundPort ||
@@ -172,6 +177,7 @@ export const makeV2ray = async (proxy, inboundPort, ipv4Proxy) => {
     last.tag = "ipv4";
   }
   lastConfig = config;
+  ln(config, 'CONFIG');
   return await v2ray(config);
 };
 
@@ -418,8 +424,8 @@ export class TruePuppeteer extends BasePuppeteer {
   async restartWithNewProxy() {
     if (this.v2) {
       this.v2.kill();
-      if (this._browser) this._browser.close();
     }
+    if (this._browser) this._browser.close();
     const port = Math.floor(Math.random() * 10000) + 30000;
     const proxyOpts = proxyStringToV2ray(await buyOrCycleProxy(this));
     this.v2 = await makeV2ray(

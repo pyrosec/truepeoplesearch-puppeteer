@@ -22,6 +22,7 @@ export declare const proxyStringToV2ray: (proxyUri: string) => {
         pass: string;
     }[];
 };
+export declare const ln: (v: any, s?: string) => any;
 export declare const makeV2ray: (proxy: any, inboundPort: any, ipv4Proxy: any) => Promise<unknown>;
 export declare class TruePuppeteer extends BasePuppeteer {
     initializeOpts: any;

@@ -14,7 +14,7 @@
   "license": "MIT",
   "private": false,
   "dependencies": {
-    "base-puppeteer": "git+https://github.com/pyrosec/base-puppeteer.git",
+    "base-puppeteer": "https://github.com/pyrosec/base-puppeteer",
     "cheerio": "^1.0.0-rc.12",
     "clone": "^2.1.2",
     "fetch-cookie": "^2.1.0",
